@@ -1,6 +1,8 @@
 from fastapi import APIRouter
+from app.schemas.job import Job
 
 router = APIRouter()
+
 
 @router.get("/health")
 def health_check():
@@ -8,9 +10,8 @@ def health_check():
 
 
 @router.post("/jobs")
-def create_job(title: str, description: str):
+def create_job(job: Job):
     return {
         "message": "Job created successfully!",
-        "title": title,
-        "description": description
+        "job": job
     }
