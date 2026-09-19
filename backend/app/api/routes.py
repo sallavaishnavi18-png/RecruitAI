@@ -6,6 +6,7 @@ from app.ai.gemini import analyze_resume
 from app.ai.job_analyzer import analyze_job
 from app.ai.matcher import match_candidate
 from app.ai.interview import generate_interview_questions
+from app.ai.transcript import analyze_transcript
 
 
 router = APIRouter()
@@ -66,9 +67,31 @@ def match_candidate_to_job(candidate: dict, requirements: dict):
 @router.post("/interview/questions")
 def generate_questions(candidate: dict, requirements: dict):
 
-    questions = generate_interview_questions(candidate, requirements)
+    questions = generate_interview_questions(
+        candidate,
+        requirements
+    )
 
     return {
         "message": "Interview questions generated successfully!",
         "questions": questions
+    }
+
+
+@router.post("/interview/analyze")
+def analyze_interview(
+    transcript: str,
+    candidate: dict,
+    requirements: dict
+):
+
+    analysis = analyze_transcript(
+        transcript,
+        candidate,
+        requirements
+    )
+
+    return {
+        "message": "Interview transcript analyzed successfully!",
+        "analysis": analysis
     }
