@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Body
 
 from app.schemas.job import Job
 from app.extractors.pdf import extract_text_from_pdf
@@ -9,6 +9,7 @@ from app.ai.matcher import match_candidate
 from app.ai.interview import generate_interview_questions
 from app.ai.transcript import analyze_transcript
 from app.ai.verification import verify_resume_claims
+from app.ai.search.candidate_search import search_candidates
 
 
 router = APIRouter()
@@ -117,4 +118,21 @@ def verify_claims(
     return {
         "message": "Resume claims verified successfully!",
         "verification": verification
+    }
+
+
+@router.post("/candidates/search")
+def search_candidate_pool(
+    query: str,
+    candidates: list = Body(...)
+):
+
+    results = search_candidates(
+        query,
+        candidates
+    )
+
+    return {
+        "message": "Candidate search completed successfully!",
+        "results": results
     }
