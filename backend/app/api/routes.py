@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File
 from app.schemas.job import Job
 from app.extractors.pdf import extract_text_from_pdf
-from app.services.resume_parser import parse_resume_text
+from app.ai.gemini import analyze_resume
 
 
 router = APIRouter()
@@ -29,10 +29,10 @@ async def upload_resume(file: UploadFile = File(...)):
 
     text = extract_text_from_pdf(file_path)
 
-    candidate = parse_resume_text(text)
+    candidate = analyze_resume(text)
 
     return {
-        "message": "Resume parsed successfully!",
+        "message": "Resume analyzed successfully!",
         "filename": file.filename,
         "candidate": candidate
     }
