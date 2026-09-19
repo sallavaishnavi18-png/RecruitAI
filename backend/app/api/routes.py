@@ -2,11 +2,13 @@ from fastapi import APIRouter, UploadFile, File
 
 from app.schemas.job import Job
 from app.extractors.pdf import extract_text_from_pdf
+
 from app.ai.gemini import analyze_resume
 from app.ai.job_analyzer import analyze_job
 from app.ai.matcher import match_candidate
 from app.ai.interview import generate_interview_questions
 from app.ai.transcript import analyze_transcript
+from app.ai.verification import verify_resume_claims
 
 
 router = APIRouter()
@@ -14,6 +16,7 @@ router = APIRouter()
 
 @router.get("/health")
 def health_check():
+
     return {
         "message": "RecruitAI API is working!"
     }
@@ -56,7 +59,10 @@ async def upload_resume(file: UploadFile = File(...)):
 @router.post("/match")
 def match_candidate_to_job(candidate: dict, requirements: dict):
 
-    match_result = match_candidate(candidate, requirements)
+    match_result = match_candidate(
+        candidate,
+        requirements
+    )
 
     return {
         "message": "Candidate matched successfully!",
@@ -94,4 +100,21 @@ def analyze_interview(
     return {
         "message": "Interview transcript analyzed successfully!",
         "analysis": analysis
+    }
+
+
+@router.post("/interview/verify")
+def verify_claims(
+    candidate: dict,
+    transcript: str
+):
+
+    verification = verify_resume_claims(
+        candidate,
+        transcript
+    )
+
+    return {
+        "message": "Resume claims verified successfully!",
+        "verification": verification
     }
