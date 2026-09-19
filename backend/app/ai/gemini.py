@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import load_dotenv
 from google import genai
 
@@ -16,18 +17,30 @@ def analyze_resume(resume_text):
     prompt = f"""
 You are an AI resume analyzer for RecruitAI.
 
-Analyze the following resume and extract the candidate information.
+Analyze the resume and return ONLY valid JSON.
 
-Return these sections:
-- Name
-- Email
-- Phone
-- Skills
-- Education
-- Experience
-- Achievements
+Use exactly this structure:
 
-Do not invent information that is not present in the resume.
+{{
+    "name": "",
+    "email": "",
+    "phone": "",
+    "skills": [],
+    "education": [],
+    "experience": [],
+    "achievements": []
+}}
+
+Rules:
+- Extract only information present in the resume.
+- Do not invent information.
+- Put each skill as a separate item in the skills list.
+- Put education details in the education list.
+- Put each job or experience entry in the experience list.
+- Put achievements in the achievements list.
+- If information is missing, use an empty string or empty list.
+- Do not add explanations or markdown.
+- Return JSON only.
 
 Resume:
 {resume_text}
@@ -38,4 +51,6 @@ Resume:
         contents=prompt
     )
 
-    return response.text
+    response_text = response.text.strip()
+
+    return json.loads(response_text)
