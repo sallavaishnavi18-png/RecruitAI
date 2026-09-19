@@ -11,6 +11,7 @@ from app.ai.transcript import analyze_transcript
 from app.ai.verification import verify_resume_claims
 from app.ai.search.candidate_search import search_candidates
 from app.ai.skillgap.skill_gap import analyze_skill_gap
+from app.ai.comparison.candidate_comparison import compare_candidates
 
 
 router = APIRouter()
@@ -153,4 +154,21 @@ def skill_gap_analysis(
     return {
         "message": "Skill gap analysis completed successfully!",
         "skill_gap": result
+    }
+
+
+@router.post("/candidates/compare")
+def compare_candidate_pool(
+    candidates: list = Body(...),
+    requirements: dict = Body(...)
+):
+
+    comparison = compare_candidates(
+        candidates,
+        requirements
+    )
+
+    return {
+        "message": "Candidate comparison completed successfully!",
+        "comparison": comparison
     }
