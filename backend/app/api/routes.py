@@ -5,6 +5,7 @@ from app.extractors.pdf import extract_text_from_pdf
 from app.ai.gemini import analyze_resume
 from app.ai.job_analyzer import analyze_job
 from app.ai.matcher import match_candidate
+from app.ai.interview import generate_interview_questions
 
 
 router = APIRouter()
@@ -59,4 +60,15 @@ def match_candidate_to_job(candidate: dict, requirements: dict):
     return {
         "message": "Candidate matched successfully!",
         "match": match_result
+    }
+
+
+@router.post("/interview/questions")
+def generate_questions(candidate: dict, requirements: dict):
+
+    questions = generate_interview_questions(candidate, requirements)
+
+    return {
+        "message": "Interview questions generated successfully!",
+        "questions": questions
     }
