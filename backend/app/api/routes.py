@@ -10,6 +10,7 @@ from app.ai.interview import generate_interview_questions
 from app.ai.transcript import analyze_transcript
 from app.ai.verification import verify_resume_claims
 from app.ai.search.candidate_search import search_candidates
+from app.ai.skillgap.skill_gap import analyze_skill_gap
 
 
 router = APIRouter()
@@ -135,4 +136,21 @@ def search_candidate_pool(
     return {
         "message": "Candidate search completed successfully!",
         "results": results
+    }
+
+
+@router.post("/skill-gap")
+def skill_gap_analysis(
+    candidate: dict,
+    requirements: dict
+):
+
+    result = analyze_skill_gap(
+        candidate,
+        requirements
+    )
+
+    return {
+        "message": "Skill gap analysis completed successfully!",
+        "skill_gap": result
     }
