@@ -193,7 +193,7 @@ export default function AISearchPage({ onSelectCandidate }) {
   };
 
   // Send a question
-  const handleSubmit = (overrideQuery = '') => {
+  const handleSubmit = async (overrideQuery = '') => {
     const textToSend =
       overrideQuery.trim() || query.trim();
 
@@ -233,8 +233,29 @@ export default function AISearchPage({ onSelectCandidate }) {
 
       clearInterval(interval);
 
-      setTimeout(() => {
-        const response = generateResponse(textToSend);
+      setTimeout(async () => {
+        let response;
+
+        try {
+          const result = await fetch(
+            "http://127.0.0.1:8000/candidates/search?query=" +
+            encodeURIComponent(textToSend)
+          );
+
+          if (!result.ok) {
+            throw new Error("Search failed");
+          }
+
+          const data = await result.json();
+
+          response = {
+            text: data.message || ("Found " + (data.candidates?.length || 0) + " candidates."),
+            candidates: data.candidates || []
+          };
+        } catch (error) {
+          console.error(error);
+          response = generateResponse(textToSend);
+        }
 
         const aiMessage = {
           id: `ai-${Date.now()}`,

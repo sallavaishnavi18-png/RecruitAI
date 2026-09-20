@@ -668,7 +668,10 @@ export default function App() {
                       candidates={
                         candidates
                       }
-
+                      
+                       jobRequirements={
+                        selectedJob?.requirements || []
+                       }
 
                       selectedCandidateId={
                         selectedCandidate?.id

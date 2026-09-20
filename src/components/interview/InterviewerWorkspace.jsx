@@ -393,6 +393,52 @@ export default function InterviewerWorkspace({
 
   const [interviewerNotes, setInterviewerNotes] = useState({});
 
+  const [interviewDate, setInterviewDate] = useState("");
+  const [interviewTime, setInterviewTime] = useState("");
+  const [interviewType, setInterviewType] = useState("Technical Interview");
+  const [scheduleMessage, setScheduleMessage] = useState("");
+  const [scheduling, setScheduling] = useState(false);
+
+  const handleScheduleInterview = async () => {
+    if (!interviewDate || !interviewTime) {
+      setScheduleMessage("Please select a date and time.");
+      return;
+    }
+
+    setScheduling(true);
+    setScheduleMessage("");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/interviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          candidate_name: candidate?.name || "Unknown Candidate",
+          job_title:
+            candidate?.jobTitle ||
+            candidate?.title ||
+            "Unknown Role",
+          interview_type: interviewType,
+          interview_date: interviewDate,
+          interview_time: interviewTime
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to schedule interview");
+      }
+
+      setScheduleMessage("Interview scheduled successfully.");
+    } catch (error) {
+      console.error(error);
+      setScheduleMessage("Could not schedule interview.");
+    } finally {
+      setScheduling(false);
+    }
+  };
+
   const [validatedQuestions, setValidatedQuestions] = useState({
     'q-01': true,
   });

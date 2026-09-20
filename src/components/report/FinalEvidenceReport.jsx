@@ -18,6 +18,9 @@ export default function FinalEvidenceReport({
     gapsProbed: false
   });
   const [isSignedOff, setIsSignedOff] = useState(false);
+  const [decision, setDecision] = useState("");
+  const [feedbackSaved, setFeedbackSaved] = useState(false);
+  const [savingFeedback, setSavingFeedback] = useState(false);
 
   const handleSignOff = () => {
     setIsSignedOff(true);
@@ -29,12 +32,101 @@ export default function FinalEvidenceReport({
     });
   };
 
+  const handleSaveFeedback = async () => {
+    if (!decision) {
+      alert("Please select a recruiter decision.");
+      return;
+    }
+
+    setSavingFeedback(true);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/recruiter-feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          candidate_name: candidate.name,
+          job_title: candidate.title || candidate.jobTitle || "Unknown Role",
+          decision: decision,
+          feedback: recruiterNotes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save feedback");
+      }
+
+      setFeedbackSaved(true);
+    } catch (error) {
+      console.error(error);
+      alert("Could not save recruiter feedback.");
+    } finally {
+      setSavingFeedback(false);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <section className="w-full max-w-5xl mx-auto py-8 px-4 select-none print:py-0 print:px-0 print:max-w-none">
+      {/* Recruiter Feedback */}
+      <div className="mb-8 rounded-2xl border border-cyan-500/20 bg-slate-900/50 p-6 print:hidden">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-cyan-400" />
+          <h2 className="text-lg font-bold text-white font-mono">
+            Recruiter Feedback
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          {["Shortlist", "Hold", "Reject"].map((option) => (
+            <button
+              key={option}
+              onClick={() => {
+                setDecision(option);
+                setFeedbackSaved(false);
+              }}
+              className={`px-4 py-3 rounded-xl border font-mono text-sm font-bold transition-all ${
+                decision === option
+                  ? "bg-cyan-500/20 border-cyan-400 text-cyan-300"
+                  : "bg-slate-950/50 border-white/10 text-slate-300 hover:border-cyan-500/40"
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+
+        <textarea
+          value={recruiterNotes}
+          onChange={(e) => {
+            setRecruiterNotes(e.target.value);
+            setFeedbackSaved(false);
+          }}
+          placeholder="Add recruiter feedback or evaluation notes..."
+          className="w-full min-h-[110px] rounded-xl bg-slate-950 border border-white/10 p-4 text-sm text-white outline-none focus:border-cyan-400/50 resize-none"
+        />
+
+        <div className="flex items-center justify-between mt-4">
+          <span className="text-xs font-mono text-slate-400">
+            {feedbackSaved ? "Feedback saved successfully." : "Human evaluator decision"}
+          </span>
+
+          <button
+            onClick={handleSaveFeedback}
+            disabled={savingFeedback}
+            className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-mono text-xs font-bold flex items-center gap-2"
+          >
+            <Send className="w-4 h-4" />
+            {savingFeedback ? "Saving..." : "Save Feedback"}
+          </button>
+        </div>
+      </div>
+
       {/* 4. Clear Hierarchical Report Header with Visible Top [ PRINT DOSSIER ] Action */}
       <div className="border-b border-white/10 pb-6 mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-6 print:border-b-2 print:border-black print:pb-4">
         <div>
@@ -360,3 +452,4 @@ export default function FinalEvidenceReport({
     </section>
   );
 }
+
