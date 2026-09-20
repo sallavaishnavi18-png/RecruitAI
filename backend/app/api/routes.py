@@ -89,10 +89,23 @@ def analyze_job(job: dict):
     }
 
 
+@router.get("/jobs")
+def get_jobs():
+
+    jobs = supabase.table("jobs").select("*").order(
+        "created_at",
+        desc=True
+    ).execute()
+
+    return {
+        "jobs": jobs.data
+    }
+
+
 @router.post("/match")
 def match_candidate(
-    candidate: dict,
-    requirements: dict
+    candidate: dict = Body(...),
+    requirements: list = Body(...)
 ):
 
     result = match_candidate_to_job(
@@ -104,7 +117,6 @@ def match_candidate(
         "message": "Candidate matched successfully!",
         "match": result
     }
-
 
 @router.post("/interview/questions")
 def generate_questions(
@@ -302,3 +314,46 @@ def portfolio_analysis(url: str):
         "ai_analysis": ai_analysis
     }
 
+@router.post("/recruiter-feedback")
+def save_recruiter_feedback(feedback: dict):
+
+    saved_feedback = supabase.table("recruiter_feedback").insert({
+        "candidate_name": feedback["candidate_name"],
+        "job_title": feedback["job_title"],
+        "decision": feedback["decision"],
+        "feedback": feedback.get("feedback", "")
+    }).execute()
+
+    return {
+        "message": "Recruiter feedback saved successfully!",
+        "feedback": saved_feedback.data
+    }
+
+@router.post("/interviews")
+def schedule_interview(interview: dict):
+
+    saved_interview = supabase.table("interviews").insert({
+        "candidate_name": interview["candidate_name"],
+        "job_title": interview["job_title"],
+        "interview_type": interview["interview_type"],
+        "interview_date": interview["interview_date"],
+        "interview_time": interview["interview_time"],
+        "status": "Scheduled"
+    }).execute()
+
+    return {
+        "message": "Interview scheduled successfully!",
+        "interview": saved_interview.data
+    }
+
+@router.get("/candidates")
+def get_candidates():
+
+    candidates = supabase.table("candidates").select("*").order(
+        "created_at",
+        desc=True
+    ).execute()
+
+    return {
+        "candidates": candidates.data
+    }

@@ -6,7 +6,6 @@ def generate_ai_response(prompt):
 
     # Try Groq first
     try:
-
         response = groq_client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=[
@@ -20,12 +19,11 @@ def generate_ai_response(prompt):
         return response.choices[0].message.content
 
     except Exception as groq_error:
-
-        print("Groq failed. Trying Gemini...")
+        print("Groq failed:", groq_error)
+        print("Trying Gemini...")
 
         # Try Gemini as backup
         try:
-
             response = gemini_client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt
@@ -34,7 +32,6 @@ def generate_ai_response(prompt):
             return response.text
 
         except Exception as gemini_error:
-
             raise ValueError(
                 f"Both Groq and Gemini failed. "
                 f"Groq error: {groq_error}. "
