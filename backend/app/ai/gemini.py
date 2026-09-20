@@ -1,19 +1,9 @@
-import os
 import json
-from dotenv import load_dotenv
-from google import genai
-
-load_dotenv()
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise ValueError("GEMINI_API_KEY is not set in .env")
-
-client = genai.Client(api_key=api_key)
+from app.ai.ai_service import generate_ai_response
 
 
 def analyze_resume(resume_text):
+
     prompt = f"""
 You are an AI resume analyzer for RecruitAI.
 
@@ -46,11 +36,21 @@ Resume:
 {resume_text}
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    try:
 
-    response_text = response.text.strip()
+        response_text = generate_ai_response(prompt)
 
-    return json.loads(response_text)
+        response_text = response_text.strip()
+
+        if response_text.startswith("```"):
+            response_text = response_text.replace("```json", "")
+            response_text = response_text.replace("```", "")
+            response_text = response_text.strip()
+
+        return json.loads(response_text)
+
+    except Exception as error:
+
+        raise ValueError(
+            f"Resume analysis failed: {error}"
+        )

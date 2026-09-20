@@ -1,3 +1,4 @@
+from app.database.supabase import supabase
 from app.ai.portfolio.portfolio_analyzer import analyze_portfolio_data
 from app.integrations.portfolio.portfolio_api import get_portfolio_data
 from fastapi import APIRouter, UploadFile, File, Body
@@ -44,8 +45,19 @@ async def upload_resume(file: UploadFile = File(...)):
 
     candidate = analyze_resume(resume_text)
 
+    # Save candidate to Supabase
+    supabase.table("candidates").insert({
+        "name": candidate.get("name"),
+        "email": candidate.get("email"),
+        "phone": candidate.get("phone"),
+        "skills": candidate.get("skills", []),
+        "education": candidate.get("education", []),
+        "experience": candidate.get("experience", []),
+        "achievements": candidate.get("achievements", [])
+    }).execute()
+
     return {
-        "message": "Resume analyzed successfully!",
+        "message": "Resume analyzed and candidate saved successfully!",
         "candidate": candidate
     }
 
