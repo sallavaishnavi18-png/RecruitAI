@@ -1,8 +1,10 @@
+from app.ai.portfolio.portfolio_analyzer import analyze_portfolio_data
+from app.integrations.portfolio.portfolio_api import get_portfolio_data
 from fastapi import APIRouter, UploadFile, File, Body
 
-from app.ai.job_analyzer import analyze_job
-from app.extractors.pdf import extract_text_from_pdf
+from app.ai.github.github_analyzer import analyze_github_data
 from app.ai.gemini import analyze_resume
+from app.ai.job_analyzer import analyze_job_description
 from app.ai.matcher import match_candidate_to_job
 from app.ai.interview import generate_interview_questions
 from app.ai.verification import verify_resume_claims
@@ -13,34 +15,30 @@ from app.ai.comparison.candidate_comparison import compare_candidates
 from app.ai.evidence.evidence import generate_evidence
 from app.ai.report.report import generate_evaluation_report
 
+from app.extractors.pdf import extract_text_from_pdf
+
+from app.integrations.github.github_api import analyze_github_profile
+
+import os
+
+
 router = APIRouter()
 
 
-@router.get("/test")
-def test():
-    return {"message": "RecruitAI API is working!"}
-
-
-@router.post("/job/analyze")
-def analyze_job_description(job: dict):
-    result = analyze_job(
-        job["title"],
-        job["description"]
-    )
-
+@router.get("/")
+def home():
     return {
-        "message": "Job description analyzed successfully!",
-        "analysis": result
+        "message": "RecruitAI Backend API is running!"
     }
 
 
 @router.post("/resume")
-def upload_resume(file: UploadFile = File(...)):
+async def upload_resume(file: UploadFile = File(...)):
 
     file_path = "resume.pdf"
 
     with open(file_path, "wb") as buffer:
-        buffer.write(file.file.read())
+        buffer.write(await file.read())
 
     resume_text = extract_text_from_pdf(file_path)
 
@@ -49,6 +47,20 @@ def upload_resume(file: UploadFile = File(...)):
     return {
         "message": "Resume analyzed successfully!",
         "candidate": candidate
+    }
+
+
+@router.post("/job")
+def analyze_job(job: dict):
+
+    result = analyze_job_description(
+        job["title"],
+        job["description"]
+    )
+
+    return {
+        "message": "Job description analyzed successfully!",
+        "requirements": result
     }
 
 
@@ -89,12 +101,14 @@ def generate_questions(
 @router.post("/interview/verify")
 def verify_claims(
     candidate: dict,
-    transcript: str
+    requirements: dict,
+    interview_answers: dict
 ):
 
     result = verify_resume_claims(
         candidate,
-        transcript
+        requirements,
+        interview_answers
     )
 
     return {
@@ -214,6 +228,33 @@ def create_evaluation_report(
     )
 
     return {
-        "message": "Candidate evaluation report generated successfully!",
+        "message": "Evaluation report generated successfully!",
         "report": report
+    }
+
+
+@router.get("/github/{username}")
+def github_profile(username: str):
+
+    github_data = analyze_github_profile(username)
+
+    ai_analysis = analyze_github_data(github_data)
+
+    return {
+        "message": "GitHub profile analyzed successfully!",
+        "github": github_data,
+        "ai_analysis": ai_analysis
+    }
+
+@router.get("/portfolio")
+def portfolio_analysis(url: str):
+
+    portfolio = get_portfolio_data(url)
+
+    ai_analysis = analyze_portfolio_data(portfolio)
+
+    return {
+        "message": "Portfolio analysis completed successfully!",
+        "portfolio": portfolio,
+        "ai_analysis": ai_analysis
     }
