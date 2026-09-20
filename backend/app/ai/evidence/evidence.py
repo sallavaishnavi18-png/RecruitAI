@@ -13,36 +13,45 @@ if not api_key:
 client = genai.Client(api_key=api_key)
 
 
-def match_candidate_to_job(candidate, requirements):
+def generate_evidence(candidate, requirements, match_result, verification):
 
     prompt = f"""
-You are an AI candidate-job matching system for RecruitAI.
+You are an evidence and audit trail system for RecruitAI.
 
-Compare the candidate against the job requirements.
+Analyze the candidate information, job requirements, matching result,
+and verification result.
 
 Return ONLY valid JSON.
 
 Use exactly this structure:
 
 {{
-    "matched_skills": [],
-    "missing_skills": [],
-    "qualification_match": "",
-    "experience_match": "",
-    "overall_match": 0,
-    "explanation": ""
+    "candidate_name": "",
+    "evidence": [
+        {{
+            "requirement": "",
+            "status": "",
+            "evidence": "",
+            "source": "",
+            "confidence": ""
+        }}
+    ]
 }}
 
 Rules:
-- Use only information present in the candidate and job requirements.
-- Do not invent skills, qualifications, or experience.
-- matched_skills should contain required skills that the candidate has.
-- missing_skills should contain required skills that the candidate does not have.
-- qualification_match should describe how the candidate's qualifications match the job.
-- experience_match should describe how the candidate's experience matches the job.
-- overall_match should be a percentage from 0 to 100.
-- explanation should briefly explain the result.
+- Use only information provided in the input.
+- Do not invent evidence.
+- requirement should identify the job requirement being evaluated.
+- status should be one of:
+  "Supported", "Needs Validation", or "Not Found".
+- evidence should briefly explain the information supporting the status.
+- source should identify where the evidence came from:
+  "Resume", "Interview", "Resume + Interview", or "Not Available".
+- confidence should be:
+  "High", "Medium", or "Low".
+- Every important requirement should have an evidence entry.
 - Do not make a hiring decision.
+- Do not say who should be hired.
 - Return JSON only.
 - Do not add markdown or explanations.
 
@@ -51,6 +60,12 @@ Candidate:
 
 Job Requirements:
 {json.dumps(requirements, indent=2)}
+
+Matching Result:
+{json.dumps(match_result, indent=2)}
+
+Verification Result:
+{json.dumps(verification, indent=2)}
 """
 
     response = client.models.generate_content(
@@ -79,6 +94,7 @@ Job Requirements:
     except json.JSONDecodeError as error:
         print("JSON ERROR:")
         print(error)
+
         print("GEMINI RESPONSE:")
         print(response_text)
 

@@ -1,80 +1,79 @@
 from fastapi import APIRouter, UploadFile, File, Body
 
-from app.schemas.job import Job
-from app.extractors.pdf import extract_text_from_pdf
-
-from app.ai.gemini import analyze_resume
 from app.ai.job_analyzer import analyze_job
-from app.ai.matcher import match_candidate
+from app.extractors.pdf import extract_text_from_pdf
+from app.ai.gemini import analyze_resume
+from app.ai.matcher import match_candidate_to_job
 from app.ai.interview import generate_interview_questions
-from app.ai.transcript import analyze_transcript
 from app.ai.verification import verify_resume_claims
+from app.ai.transcript import analyze_transcript
 from app.ai.search.candidate_search import search_candidates
 from app.ai.skillgap.skill_gap import analyze_skill_gap
 from app.ai.comparison.candidate_comparison import compare_candidates
-
+from app.ai.evidence.evidence import generate_evidence
+from app.ai.report.report import generate_evaluation_report
 
 router = APIRouter()
 
 
-@router.get("/health")
-def health_check():
+@router.get("/test")
+def test():
+    return {"message": "RecruitAI API is working!"}
+
+
+@router.post("/job/analyze")
+def analyze_job_description(job: dict):
+    result = analyze_job(
+        job["title"],
+        job["description"]
+    )
 
     return {
-        "message": "RecruitAI API is working!"
-    }
-
-
-@router.post("/jobs")
-def create_job(job: Job):
-
-    job_analysis = analyze_job(job.description)
-
-    return {
-        "message": "Job analyzed successfully!",
-        "job": {
-            "title": job.title,
-            "description": job.description
-        },
-        "requirements": job_analysis
+        "message": "Job description analyzed successfully!",
+        "analysis": result
     }
 
 
 @router.post("/resume")
-async def upload_resume(file: UploadFile = File(...)):
+def upload_resume(file: UploadFile = File(...)):
 
     file_path = "resume.pdf"
 
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
+    with open(file_path, "wb") as buffer:
+        buffer.write(file.file.read())
 
-    text = extract_text_from_pdf(file_path)
+    resume_text = extract_text_from_pdf(file_path)
 
-    candidate = analyze_resume(text)
+    candidate = analyze_resume(resume_text)
 
     return {
         "message": "Resume analyzed successfully!",
-        "filename": file.filename,
         "candidate": candidate
     }
 
 
 @router.post("/match")
-def match_candidate_to_job(candidate: dict, requirements: dict):
+def match_candidate(
+    candidate: dict,
+    requirements: dict
+):
 
-    match_result = match_candidate(
+    result = match_candidate_to_job(
         candidate,
         requirements
     )
 
     return {
         "message": "Candidate matched successfully!",
-        "match": match_result
+        "match": result
     }
 
 
 @router.post("/interview/questions")
-def generate_questions(candidate: dict, requirements: dict):
+def generate_questions(
+    candidate: dict,
+    requirements: dict
+):
 
     questions = generate_interview_questions(
         candidate,
@@ -84,6 +83,23 @@ def generate_questions(candidate: dict, requirements: dict):
     return {
         "message": "Interview questions generated successfully!",
         "questions": questions
+    }
+
+
+@router.post("/interview/verify")
+def verify_claims(
+    candidate: dict,
+    transcript: str
+):
+
+    result = verify_resume_claims(
+        candidate,
+        transcript
+    )
+
+    return {
+        "message": "Resume claims verified successfully!",
+        "verification": result
     }
 
 
@@ -103,23 +119,6 @@ def analyze_interview(
     return {
         "message": "Interview transcript analyzed successfully!",
         "analysis": analysis
-    }
-
-
-@router.post("/interview/verify")
-def verify_claims(
-    candidate: dict,
-    transcript: str
-):
-
-    verification = verify_resume_claims(
-        candidate,
-        transcript
-    )
-
-    return {
-        "message": "Resume claims verified successfully!",
-        "verification": verification
     }
 
 
@@ -171,4 +170,50 @@ def compare_candidate_pool(
     return {
         "message": "Candidate comparison completed successfully!",
         "comparison": comparison
+    }
+
+
+@router.post("/evidence")
+def create_evidence(
+    candidate: dict,
+    requirements: dict,
+    match_result: dict,
+    verification: dict
+):
+
+    evidence = generate_evidence(
+        candidate,
+        requirements,
+        match_result,
+        verification
+    )
+
+    return {
+        "message": "Evidence audit trail generated successfully!",
+        "evidence": evidence
+    }
+
+
+@router.post("/evaluation-report")
+def create_evaluation_report(
+    candidate: dict,
+    requirements: dict,
+    match_result: dict,
+    skill_gap: dict,
+    evidence: dict,
+    interview_analysis: dict = None
+):
+
+    report = generate_evaluation_report(
+        candidate,
+        requirements,
+        match_result,
+        skill_gap,
+        evidence,
+        interview_analysis
+    )
+
+    return {
+        "message": "Candidate evaluation report generated successfully!",
+        "report": report
     }
