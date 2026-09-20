@@ -1,3 +1,4 @@
+from app.ai.grouping.candidate_grouping import group_candidates
 from app.database.supabase import supabase
 from app.ai.portfolio.portfolio_analyzer import analyze_portfolio_data
 from app.integrations.portfolio.portfolio_api import get_portfolio_data
@@ -53,6 +54,7 @@ async def upload_resume(file: UploadFile = File(...)):
         "skills": candidate.get("skills", []),
         "education": candidate.get("education", []),
         "experience": candidate.get("experience", []),
+        "projects": candidate.get("projects", []),
         "achievements": candidate.get("achievements", [])
     }).execute()
 
@@ -70,8 +72,19 @@ def analyze_job(job: dict):
         job["description"]
     )
 
+    # Save job to Supabase
+    saved_job = supabase.table("jobs").insert({
+        "title": job["title"],
+        "description": job["description"],
+        "required_skills": result.get("required_skills", []),
+        "qualifications": result.get("qualifications", []),
+        "experience_requirements": result.get("experience_requirements", []),
+        "responsibilities": result.get("responsibilities", [])
+    }).execute()
+
     return {
-        "message": "Job description analyzed successfully!",
+        "message": "Job description analyzed and saved successfully!",
+        "job_id": saved_job.data[0]["id"],
         "requirements": result
     }
 
@@ -183,19 +196,19 @@ def skill_gap_analysis(
 
 
 @router.post("/candidates/compare")
-def compare_candidate_pool(
+def group_candidate_pool(
     candidates: list = Body(...),
     requirements: dict = Body(...)
 ):
 
-    comparison = compare_candidates(
+    groups = group_candidates(
         candidates,
         requirements
     )
 
     return {
-        "message": "Candidate comparison completed successfully!",
-        "comparison": comparison
+        "message": "Candidates grouped successfully!",
+        "groups": groups
     }
 
 
@@ -245,6 +258,23 @@ def create_evaluation_report(
     }
 
 
+@router.post("/candidates/group")
+def group_candidate_pool(
+    candidates: list = Body(...),
+    requirements: dict = Body(...)
+):
+
+    groups = group_candidates(
+        candidates,
+        requirements
+    )
+
+    return {
+        "message": "Candidates grouped successfully!",
+        "groups": groups
+    }
+
+
 @router.get("/github/{username}")
 def github_profile(username: str):
 
@@ -258,6 +288,7 @@ def github_profile(username: str):
         "ai_analysis": ai_analysis
     }
 
+
 @router.get("/portfolio")
 def portfolio_analysis(url: str):
 
@@ -270,3 +301,4 @@ def portfolio_analysis(url: str):
         "portfolio": portfolio,
         "ai_analysis": ai_analysis
     }
+

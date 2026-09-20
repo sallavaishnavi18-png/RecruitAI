@@ -18,6 +18,7 @@ Use exactly this structure:
     "skills": [],
     "education": [],
     "experience": [],
+    "projects": [],
     "achievements": []
 }}
 
@@ -28,6 +29,7 @@ Rules:
 - Put education details in the education list.
 - Put each job or experience entry in the experience list.
 - Put achievements in the achievements list.
+- Put each project in the projects list.
 - If information is missing, use an empty string or empty list.
 - Do not add explanations or markdown.
 - Return JSON only.

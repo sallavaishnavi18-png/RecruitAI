@@ -1,16 +1,5 @@
-import os
 import json
-from dotenv import load_dotenv
-from google import genai
-
-load_dotenv()
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-if not api_key:
-    raise ValueError("GEMINI_API_KEY is not set in .env")
-
-client = genai.Client(api_key=api_key)
+from app.ai.ai_service import generate_ai_response
 
 
 def analyze_job_description(title, description):
@@ -50,34 +39,41 @@ Job Description:
 {description}
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    try:
 
-    response_text = response.text.strip()
+        response_text = generate_ai_response(prompt)
 
-    if response_text.startswith("```"):
-        response_text = response_text.replace("```json", "")
-        response_text = response_text.replace("```", "")
         response_text = response_text.strip()
 
-    start = response_text.find("{")
-    end = response_text.rfind("}")
+        # Remove markdown code fences if the AI adds them
+        if response_text.startswith("```"):
+            response_text = response_text.replace("```json", "")
+            response_text = response_text.replace("```", "")
+            response_text = response_text.strip()
 
-    if start == -1 or end == -1:
-        raise ValueError("Gemini did not return valid JSON.")
+        # Find the JSON object
+        start = response_text.find("{")
+        end = response_text.rfind("}")
 
-    response_text = response_text[start:end + 1]
+        if start == -1 or end == -1:
+            raise ValueError("AI did not return valid JSON.")
 
-    try:
+        response_text = response_text[start:end + 1]
+
         return json.loads(response_text)
 
     except json.JSONDecodeError as error:
+
         print("JSON ERROR:")
         print(error)
 
-        print("GEMINI RESPONSE:")
+        print("AI RESPONSE:")
         print(response_text)
 
-        raise ValueError("Gemini returned invalid JSON.")
+        raise ValueError("AI returned invalid JSON.")
+
+    except Exception as error:
+
+        raise ValueError(
+            f"Job description analysis failed: {error}"
+        )
